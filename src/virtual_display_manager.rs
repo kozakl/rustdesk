@@ -391,7 +391,7 @@ pub mod amyuni_idd {
         time::Duration,
     };
     use winapi::{
-        shared::{guiddef::GUID, winerror::ERROR_NO_MORE_ITEMS},
+        shared::guiddef::GUID,
         um::shellapi::ShellExecuteA,
     };
 
@@ -581,15 +581,14 @@ pub mod amyuni_idd {
                     break;
                 }
                 Err(e) => {
-                    if is_driver_async_installed {
-                        if let win_device::DeviceError::WinApiLastErr(_, e2) = &e {
-                            if e2.raw_os_error() == Some(ERROR_NO_MORE_ITEMS as _) {
-                                if now.elapsed() < timeout {
-                                    std::thread::sleep(Duration::from_millis(100));
-                                    continue;
-                                }
-                            }
-                        }
+                    if is_driver_async_installed && now.elapsed() < timeout {
+                        log::warn!(
+                            "Failed to plug {} monitor right after driver install, retrying: {}",
+                            if add { "in" } else { "out" },
+                            e
+                        );
+                        std::thread::sleep(Duration::from_millis(100));
+                        continue;
                     }
                     return Err(e.into());
                 }
