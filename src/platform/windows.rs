@@ -4853,6 +4853,22 @@ pub(super) fn get_pids_with_first_arg_by_wmic<S1: AsRef<str>, S2: AsRef<str>>(
         .unwrap_or_default()
 }
 
+/// Whether the clipboard currently holds an image, checked without opening the clipboard.
+///
+/// Opening the clipboard to read an image (and forcing its CF_DIBV5/PNG rendering) right after
+/// Snipping Tool (Win+Shift+S) sets it can make the snip fail, leaving the clipboard empty.
+pub fn is_clipboard_image() -> bool {
+    use winapi::um::winuser::{
+        IsClipboardFormatAvailable, RegisterClipboardFormatA, CF_BITMAP, CF_DIB, CF_DIBV5,
+    };
+    unsafe {
+        let png = RegisterClipboardFormatA(b"PNG\0".as_ptr() as _);
+        [CF_BITMAP, CF_DIB, CF_DIBV5, png]
+            .iter()
+            .any(|&f| f != 0 && IsClipboardFormatAvailable(f) != 0)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
