@@ -2093,6 +2093,12 @@ impl ClientClipboardHandler {
                 }
             }
 
+            // Don't touch images on the local clipboard, so Win+Shift+S keeps working.
+            #[cfg(target_os = "windows")]
+            if crate::platform::windows::is_clipboard_image() {
+                return;
+            }
+
             if check_text && self.is_text_required() {
                 if let Some(msg) = check_clipboard(&mut self.ctx, ClipboardSide::Client, false) {
                     self.send_msg(msg, false);
